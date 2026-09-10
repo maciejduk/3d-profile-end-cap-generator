@@ -28,7 +28,7 @@ class EndCapParams:
     # Optional geometry tweaks (all in mm unless noted).
     corner_radius: float = 3.0          # outer corner rounding of the profile
     cap_thickness: float = 2.5          # thickness of the flat top plate
-    lip_height: float = 8.0             # how far the outer skirt covers the walls
+    lip_height: float = 8.0             # how far the outer skirt covers the walls; <= 0 disables the lip entirely
     lip_thickness: float | None = None  # skirt wall thickness (defaults to wall_thickness)
     lip_clearance: float = 0.3          # per-side slide-fit gap between the tube's outer surface and the lip pocket
     insert_depth: float = 10.0          # how deep the ribbed plug goes into the tube
@@ -61,7 +61,7 @@ class EndCapParams:
         if inner_x <= 0 or inner_y <= 0:
             raise ValueError("wall_thickness is too large for the given outer dimensions")
 
-        if self.lip_thickness <= 0:
+        if self.lip_thickness <= 0 and self.lip_height > 0:
             raise ValueError("lip_thickness must be positive")
         if self.lip_clearance < 0:
             raise ValueError("lip_clearance must be >= 0")
@@ -90,6 +90,11 @@ class EndCapParams:
         return max(self.corner_radius - self.wall_thickness, 0.0)
 
     @property
+    def has_lip(self) -> bool:
+        """Whether the cap has an outer skirt that sleeves beyond the profile's dimensions."""
+        return self.lip_height > 0
+
+    @property
     def lip_pocket_x(self) -> float:
         """Inner size (X) of the lip pocket - just larger than the tube's outer X for a slide fit."""
         return self.outer_x + 2 * self.lip_clearance
@@ -105,16 +110,22 @@ class EndCapParams:
 
     @property
     def lip_outer_x(self) -> float:
-        """Overall footprint (X) of the cap: lip pocket plus the skirt's own wall."""
+        """Overall footprint (X) of the cap: lip pocket plus the skirt's own wall (or just the profile's own width if there's no lip)."""
+        if not self.has_lip:
+            return self.outer_x
         return self.lip_pocket_x + 2 * self.lip_thickness
 
     @property
     def lip_outer_y(self) -> float:
-        """Overall footprint (Y) of the cap: lip pocket plus the skirt's own wall."""
+        """Overall footprint (Y) of the cap: lip pocket plus the skirt's own wall (or just the profile's own width if there's no lip)."""
+        if not self.has_lip:
+            return self.outer_y
         return self.lip_pocket_y + 2 * self.lip_thickness
 
     @property
     def lip_outer_radius(self) -> float:
+        if not self.has_lip:
+            return self.corner_radius
         return self.lip_pocket_radius + self.lip_thickness
 
 
@@ -136,15 +147,20 @@ def build_end_cap(p: EndCapParams) -> cq.Workplane:
     The top plate and lip are both sized to the cap's full outer footprint
     (tube outer dims + lip_clearance + lip_thickness on each side), so the
     plate fully seals over the tube's end - the lip's pocket then slides
-    down over the tube's actual outside surface.
+    down over the tube's actual outside surface. If lip_height <= 0, the lip
+    is omitted entirely and the top plate is flush with the profile's own
+    outer dimensions (no overhang).
     """
     top_plate = _rounded_rect_solid(p.lip_outer_x, p.lip_outer_y, p.lip_outer_radius, p.cap_thickness)
+
+    plug = _build_plug(p)
+
+    if not p.has_lip:
+        return top_plate.union(plug)
 
     lip_outer = _rounded_rect_solid(p.lip_outer_x, p.lip_outer_y, p.lip_outer_radius, -p.lip_height)
     lip_pocket = _rounded_rect_solid(p.lip_pocket_x, p.lip_pocket_y, p.lip_pocket_radius, -p.lip_height)
     lip = lip_outer.cut(lip_pocket)
-
-    plug = _build_plug(p)
 
     cap = top_plate.union(lip).union(plug)
     return cap

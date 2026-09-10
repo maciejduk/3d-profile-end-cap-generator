@@ -36,7 +36,7 @@ def _fmt_dim(value: float) -> str:
 def default_output_path(p: EndCapParams) -> Path:
     """cap_<outer-x>x<outer-y>, with a _lip suffix if the lip sleeves beyond the profile."""
     name = f"cap_{_fmt_dim(p.outer_x)}x{_fmt_dim(p.outer_y)}"
-    if p.lip_outer_x > p.outer_x + 1e-6 or p.lip_outer_y > p.outer_y + 1e-6:
+    if p.has_lip:
         name += "_lip"
     return Path(name)
 
@@ -51,7 +51,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
     parser.add_argument("--corner-radius", type=float, default=3.0, help="Outer corner radius (mm)")
     parser.add_argument("--cap-thickness", type=float, default=2.5, help="Top plate thickness (mm)")
-    parser.add_argument("--lip-height", type=float, default=8.0, help="Outer skirt/lip height (mm)")
+    parser.add_argument("--lip-height", type=float, default=8.0, help="Outer skirt/lip height (mm); <= 0 disables the lip so the top plate stays flush with the profile")
     parser.add_argument("--lip-thickness", type=float, default=None, help="Lip wall thickness (mm, default = wall-thickness)")
     parser.add_argument("--lip-clearance", type=float, default=0.3, help="Per-side slide-fit gap between the tube's outer surface and the lip pocket (mm)")
     parser.add_argument("--insert-depth", type=float, default=10.0, help="Ribbed plug depth (mm)")

@@ -58,13 +58,38 @@ profile's outer dimensions). Pass `-o out/cap` to use an explicit path instead.
   accuracy (0.2–0.4 mm is a good start) so the plug body itself slides in
   freely and only the ribs provide friction.
 - `--lip-clearance` is the same kind of fit tolerance, but for the outer
-  skirt sliding over the tube; 0.2–0.4 mm is a good starting point. Note the
+  skirt sliding over the tube; 0.2-0.4 mm is a good starting point. Note the
   cap's overall footprint grows by `2 * (lip_clearance + lip_thickness)` in
   each dimension, since the top plate is sized to seal the whole skirt.
+- Set `--lip-height 0` to disable the lip entirely - the top plate then stays
+  flush with the profile's outer dimensions (no overhang).
 - If your profile has sharp (non-rounded) outer corners, set
   `--corner-radius 0`.
 
+## Examples
+
+See [examples/](examples/) for a set of pre-generated STL/OBJ files covering
+square and rectangular profiles, with and without the outer lip:
+
+| File | Profile | Lip |
+|---|---|---|
+| `cap_40x20_lip` | 40x20 mm | yes |
+| `cap_40x20_nolip` | 40x20 mm | no |
+| `cap_20x20_nolip` | 20x20 mm | no |
+| `cap_40x40_nolip` | 40x40 mm | no |
+| `cap_50x50_nolip` | 50x50 mm | no |
+| `cap_60x60_nolip` | 60x60 mm | no |
+| `cap_40x60_nolip` | 40x60 mm | no |
+
+All generated with `--wall-thickness 3`. Regenerate any of them (or add more)
+with the CLI, e.g.:
+
+```bash
+uv run endcap-generator --outer-x 40 --outer-y 20 --wall-thickness 3 -o examples/cap_40x20_lip
+```
+
 ## Project layout
 
-- `src/endcap_generator/geometry.py` — parametric solid model (`EndCapParams`, `build_end_cap`)
-- `src/endcap_generator/__init__.py` — CLI / STL & OBJ export
+- `src/endcap_generator/geometry.py` - parametric solid model (`EndCapParams`, `build_end_cap`)
+- `src/endcap_generator/__init__.py` - CLI / STL & OBJ export
+- `examples/` - pre-generated sample STL/OBJ files (only `.stl`/`.obj` are tracked here)

@@ -1,0 +1,5 @@
+# Only STL/OBJ (and this file) are tracked in examples/, everything else is ignored.
+*
+!*.stl
+!*.obj
+!.gitignore
